@@ -1,0 +1,9 @@
+/.git/
+/.idea/
+/assets/vendor/
+/var/
+/vendor/
+*.local
+compose.override.yaml
+compose.yaml
+Dockerfile

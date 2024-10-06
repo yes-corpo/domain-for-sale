@@ -1,37 +1,26 @@
-# Dockerfile
-
-# Utiliser une image PHP avec Apache et Composer
 FROM php:8.2-apache
 
-# Installer les dépendances système nécessaires
-RUN apt-get update && apt-get install -y \
-    libicu-dev \
-    libzip-dev \
-    zip \
-    git \
-    unzip \
-    && docker-php-ext-install intl opcache pdo pdo_mysql zip
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Activer mod_rewrite pour Symfony
-RUN a2enmod rewrite
+RUN apt-get update && apt-get install -y libzip-dev zip
+RUN docker-php-ext-install zip
 
-# Installer Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Définir le répertoire de travail
 WORKDIR /var/www/html
 
-# Copier les fichiers de l'application Symfony dans le conteneur
 COPY . .
 
-# Installer les dépendances PHP avec Composer
+COPY .docker/domain-for-sale.conf /etc/apache2/sites-enabled/000-default.conf
+
+RUN chown -R www-data:www-data /var/www/html
+
+USER www-data
+
+ENV APP_ENV=prod
+
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# Donner les permissions au dossier var
-RUN chown -R www-data:www-data /var/www/html/var
+RUN php bin/console asset-map:compile
 
-# Exposer le port 80 pour l'application web
 EXPOSE 80
 
-# Commande par défaut à exécuter
 CMD ["apache2-foreground"]
